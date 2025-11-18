@@ -1,0 +1,178 @@
+---
+title: "spegeti"
+format: html
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(readxl) # Read xlsx file
+library(tidyverse) # Data exploration
+library(ggplot) # Plotting
+oedi_data <- read_excel("data/oedi_data.xlsx", sheet = 2)
+oedi_meta<- read_excel("data/oedi_data.xlsx", sheet = 3)
+```
+
+```{r}
+
+head(oedi_data)
+colnames(oedi_data)
+```
+
+# Initial Exploration
+
+```{r}
+# 1. Density Plot of Performance Ratio (PR)
+# Use a density plot to better visualize the shape of the distribution between 0 and 1.
+ggplot(oedi_data, aes(x = PR)) +
+  geom_density(fill = "darkblue", alpha = 0.6) +
+  labs(
+    title = "Distribution of Daily Performance Ratio (PR)",
+    x = "Performance Ratio (PR)",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+# 2. PR vs. Major Extreme Event Type
+oedi_data_events <- oedi_data |> 
+  # Select PR and the main binary event indicators
+  select(PR, nearest_hurricane, nearest_storm, nearest_flood) |> 
+  # Create a long format for plotting
+  tidyr::pivot_longer(cols = c(nearest_hurricane, nearest_flood, nearest_storm),
+                      names_to = "nearest_event",
+                      values_to = "Is_Event_Day")  |>
+  # Filter only the days where the event occurred (Is_Event_Day = 1)
+  filter(Is_Event_Day == 1)
+
+ggplot(oedi_data_events, aes(x = nearest_event, y = PR, fill = nearest_event)) +
+  geom_boxplot() +
+  labs(
+    title = "Performance Ratio by Major Extreme Event Day",
+    x = "Extreme Weather Event",
+    y = "Performance Ratio (PR)"
+  ) +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2")
+```
+
+```{r}
+# 4. PR vs. Geographic Climate Region
+ggplot(oedi_data, aes(x = reorder(NOAAClimRegion, PR, FUN = median), y = PR, fill = NOAAClimRegion)) +
+  geom_boxplot(show.legend = FALSE) +
+  labs(
+    title = "Performance Ratio Across NOAA Climate Regions",
+    x = "NOAA Climate Region",
+    y = "Performance Ratio (PR)"
+  ) +
+  theme_minimal() +
+  coord_flip() # Flip coordinates to make long region names readable
+```
+
+```{r}
+# Filter for just storm days (or hurricane/snow) for a focused view
+oedi_storm_days <- oedi_data %>%
+  filter(storm == 1)
+
+# Plot: Mean PR by Plant Size, separated by Climate Region
+ggplot(oedi_storm_days, aes(x = bin_PlantSize_kW, y = PR, fill = NOAAClimRegion)) +
+  # Use a boxplot or violin plot to show the distribution
+  geom_boxplot(position = position_dodge(width = 0.8)) +
+  labs(
+    title = "PR Interaction: Plant Size by Climate Region on Storm Days",
+    subtitle = "Does a storm affect small vs. large plants differently depending on location?",
+    x = "Plant Size (kW)",
+    y = "Performance Ratio (PR)",
+    fill = "Climate Region"
+  ) +
+  theme_minimal() +
+  # Facet by another key variable (e.g., TempZone) if you want more splits
+  facet_wrap(~ TempZone)
+```
+
+```{r}
+# 2. Conditional Density Plot
+ggplot(oedi_data, aes(x = PR, fill = total_daily_snow_mm)) +
+  # Cut the continuous snow variable into bins for visualization
+  geom_density(alpha = 0.6) +
+  labs(
+    title = "Conditional Density of PR by Daily Snow Severity",
+    x = "Performance Ratio (PR)",
+    y = "Density",
+    fill = "Daily Snow (mm)"
+  ) +
+  theme_minimal() +
+  # Facet by binned snow depth to see the shift in the PR distribution
+  facet_wrap(~ cut(total_daily_snow_mm, breaks = c(20, 50, 100, Inf), 
+                   labels = c("Light (0-10mm)", "Medium (10-50mm)", "Heavy (>50mm)"), 
+                   right = FALSE))
+```
+
+```{r}
+# 3. Binned Scatter Plot for Compound Effect
+ggplot(oedi_data, aes(x = wind_speed_mean, y = PR, color = low_irradiation)) +
+  # Note: You'd want to convert wind_speed_mean to a numeric if it's currently categorical
+  
+  # Group the data into bins of wind speed and calculate mean PR
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + 
+  geom_point(alpha = 0.3) +
+  scale_x_continuous(limits = c(0, 20)) +
+  labs(
+    title = "PR vs. Wind Speed, Conditioned on Low Irradiation",
+    x = "Average Daily Wind Speed",
+    y = "Performance Ratio (PR)",
+    color = "Low Irradiation Day"
+  ) +
+  theme_minimal()
+```
+
+```{r}
+
+```
+
+```{r}
+# 1. Performance Ratio vs Snow Impact
+ggplot(oedi_data, aes(x = total_daily_snow_mm, y = PR, color = snow_production_level)) +
+  geom_point(alpha = 0.4) +
+  geom_smooth(method = "lm", se = TRUE) +
+  labs(title = "Solar Panel Performance vs Daily Snowfall",
+       subtitle = "Does snow accumulation predict performance degradation?",
+       x = "Total Daily Snow (mm)",
+       y = "Performance Ratio",
+       color = "Production Level") +
+  theme_minimal()
+
+# 2. Performance by Climate Region
+ggplot(oedi_data, aes(x = NOAAClimRegion, y = PR, fill = NOAAClimRegion)) +
+  geom_boxplot() +
+  labs(title = "Performance Ratio Distribution by Climate Region",
+       subtitle = "Regional differences in solar panel efficiency",
+       x = "NOAA Climate Region",
+       y = "Performance Ratio") +
+  theme_minimal() +
+  theme(legend.position = "none")
+
+# 3. Plant Age Effect on Performance
+ggplot(oedi_data, aes(x = plant_age_months, y = PR)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "loess", color = "red", se = TRUE) +
+  facet_wrap(~TempZone) +
+  labs(title = "Panel Degradation Over Time by Temperature Zone",
+       subtitle = "How does aging affect performance in different climates?",
+       x = "Plant Age (months)",
+       y = "Performance Ratio") +
+  theme_minimal()
+
+# 4. Cumulative Snow vs Performance
+ggplot(oedi_data, aes(x = cumulative_snow_mm, y = PR, color = bin_PlantSize_kW)) +
+  geom_point(alpha = 0.8) +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(title = "Cumulative Snow Impact by Plant Size",
+       subtitle = "Do larger plants handle snow accumulation differently?",
+       x = "Cumulative Snow (mm)",
+       y = "Performance Ratio",
+       color = "Plant Size") +
+  theme_minimal()
+```
+
