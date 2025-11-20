@@ -8,18 +8,31 @@ editor_options:
 ```{r}
 library(readxl) # Read xlsx file
 library(tidyverse) # Data exploration
-library(ggplot) # Plotting
 oedi_data <- read_excel("data/oedi_data.xlsx", sheet = 2)
 oedi_meta<- read_excel("data/oedi_data.xlsx", sheet = 3)
 ```
 
+# Data Exploration
 ```{r}
 
 head(oedi_data)
 colnames(oedi_data)
 ```
 
-# Initial Exploration
+
+```{r}
+# gamma_mod <- glm(
+#   PR ~ total_daily_snow_mm + wind_speed_mean + plant_age_months,
+#   data = oedi_data,
+#   family = Gamma(link = "log")
+# )
+# 
+# summary(gamma_mod)
+
+```
+
+
+# Plots Exploration
 
 ```{r}
 # 1. Density Plot of Performance Ratio (PR)
@@ -91,27 +104,10 @@ ggplot(oedi_storm_days, aes(x = bin_PlantSize_kW, y = PR, fill = NOAAClimRegion)
   facet_wrap(~ TempZone)
 ```
 
-```{r}
-# 2. Conditional Density Plot
-ggplot(oedi_data, aes(x = PR, fill = total_daily_snow_mm)) +
-  # Cut the continuous snow variable into bins for visualization
-  geom_density(alpha = 0.6) +
-  labs(
-    title = "Conditional Density of PR by Daily Snow Severity",
-    x = "Performance Ratio (PR)",
-    y = "Density",
-    fill = "Daily Snow (mm)"
-  ) +
-  theme_minimal() +
-  # Facet by binned snow depth to see the shift in the PR distribution
-  facet_wrap(~ cut(total_daily_snow_mm, breaks = c(20, 50, 100, Inf), 
-                   labels = c("Light (0-10mm)", "Medium (10-50mm)", "Heavy (>50mm)"), 
-                   right = FALSE))
-```
 
 ```{r}
 # 3. Binned Scatter Plot for Compound Effect
-ggplot(oedi_data, aes(x = wind_speed_mean, y = PR, color = low_irradiation)) +
+ggplot(oedi_data, aes(x = snow_value_mm, y = PR, color = total_daily_snow_mm)) +
   # Note: You'd want to convert wind_speed_mean to a numeric if it's currently categorical
   
   # Group the data into bins of wind speed and calculate mean PR
@@ -119,17 +115,14 @@ ggplot(oedi_data, aes(x = wind_speed_mean, y = PR, color = low_irradiation)) +
   geom_point(alpha = 0.3) +
   scale_x_continuous(limits = c(0, 20)) +
   labs(
-    title = "PR vs. Wind Speed, Conditioned on Low Irradiation",
-    x = "Average Daily Wind Speed",
+    title = "PR vs. Daily Snow,n",
+    x = "Total Daily Snow Fall",
     y = "Performance Ratio (PR)",
     color = "Low Irradiation Day"
   ) +
   theme_minimal()
 ```
 
-```{r}
-
-```
 
 ```{r}
 # 1. Performance Ratio vs Snow Impact
@@ -164,15 +157,5 @@ ggplot(oedi_data, aes(x = plant_age_months, y = PR)) +
        y = "Performance Ratio") +
   theme_minimal()
 
-# 4. Cumulative Snow vs Performance
-ggplot(oedi_data, aes(x = cumulative_snow_mm, y = PR, color = bin_PlantSize_kW)) +
-  geom_point(alpha = 0.8) +
-  geom_smooth(method = "lm", se = FALSE) +
-  labs(title = "Cumulative Snow Impact by Plant Size",
-       subtitle = "Do larger plants handle snow accumulation differently?",
-       x = "Cumulative Snow (mm)",
-       y = "Performance Ratio",
-       color = "Plant Size") +
-  theme_minimal()
 ```
 
