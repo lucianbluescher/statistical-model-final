@@ -1,0 +1,164 @@
+---
+title: "Snow and luminance on PV Performance: A ARIMA model Time-Series analysis"
+author: Lucian Scher
+date: "12/4/25"
+format:
+  html:
+    toc: true
+    toc-title: "Contents"
+execute:
+  echo: true
+  warning: false
+  message: false
+editor_options: 
+  chunk_output_type: inline
+---
+
+## Purpose
+
+This blog post expands on the findings of Jackson & Gunda (2021), who found a strong negative impact of extreme weather, particularly snow, on photovoltaic (PV) performance. Their work used complex machine learning, which I recommend reading their article to fully understand. We use an AR(1) model—the simplest form of an ARIMA (Autoregressive Integrated Moving Average) model, that uses just (p) and accounts for the day-to-day persistence in the Performance Ratio (PR) as a function of cumulative snow depth and low irradiance as inputs. This allows us to test the effect of snow from one day on performance over time, and to visualize how snowfall affects the regions over time.
+
+### Reference
+Jackson, N. D., & Gunda, T. (2021). Evaluation of extreme weather impacts on utility-scale photovoltaic plant performance in the United States. Applied Energy, 302, 117508. https://doi.org/10.1016/j.apenergy.2021.117508
+
+
+## Hypothesis
+
+After accounting for day-to-day persistence in PR, higher cumulative snow depth reduces
+daily PR, and low-irradiance days further reduce PR.
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(tsibble)
+library(fable)
+library(feasts)
+library(broom)
+library(kableExtra)
+library(readxl)
+library(janitor)
+library(dagitty)
+```
+
+## Data import and wrangling
+
+Drop rows with missing inputs, and find means
+within region/date so all plants in each region are accounted for.
+
+```{r}
+# Load data
+oedi_data <- read_excel("data/oedi_data.xlsx", sheet = "data") |>
+  clean_names()
+
+plant_ts <- oedi_data |>
+  drop_na(noaa_clim_region, date, pr, cumulative_snow_mm, low_irradiation) |>
+  mutate(
+    date = as.Date(date),
+    region = noaa_clim_region) |>
+  select(region, date, pr, cumulative_snow_mm, low_irradiation) |>
+  group_by(region, date) |>
+  summarise(
+    pr = mean(pr),
+    cumulative_snow_mm = mean(cumulative_snow_mm),
+    low_irradiation = mean(low_irradiation),
+    .groups = "drop"
+  ) |>
+  arrange(region, date) |>
+  as_tsibble(key = region, index = date)
+
+glimpse(plant_ts)
+```
+
+## Model concept
+
+Our AR(1) model today's Performance Ratio (pr) using AR(1) that incorporates yesterday's PR to account for the persistence of poor performance. We use cumulative snow depth (mm) and a low-irradiance predictors, to quantify the temporal effect and the immediate effect of current weather conditions.
+
+## DAG (conceptual)
+
+```{r}
+pr_dag <- dagitty("
+dag {
+  Region -> Snow
+  Region -> LowIrr
+  Region -> PR
+  Snow -> PR
+  LowIrr -> PR
+  PlantAge -> PR
+}
+")
+
+plot(pr_dag)
+```
+
+Nodes: 
+Snow (cumulative snow), 
+LowIrr (low irradiance), 
+PR_lag (yesterday’s PR),
+PlantAge (age of solar farm)
+Region (Region of U.S)
+
+This DAG shows PR directly influenced by Snow, Low irradiance, a Lagged PR value, and Plant Age. Region is a confounding variable, influencing PR both directly and indirectly through its effects on Snow and Low Irrigation, which is why we chose to group by region in for model. 
+
+Since we grouped by Region, the variable Region is constant and since photovolatic plant age varies slowly I left them both out of my fitted model, but included them in my DAG because Jackson & Gunda pointed to those two as the most impactful non-weather variables.
+
+## Fit ARIMA model
+
+```{r}
+model_fit <- plant_ts |>
+  model(
+    arima = ARIMA(pr ~ pdq(1, 0, 0) + cumulative_snow_mm + low_irradiation)
+  )
+
+model_fit
+```
+
+## Coefficient Table
+
+```{r}
+coef_tbl <- tidy(model_fit) |>
+  select(region, term, estimate, std.error, statistic, p.value) |>
+  arrange(region, term)
+
+coef_tbl |>
+  kable(digits = 3, caption = "ARIMA(1,0,0) with snow and irradiance (by region)") |>
+  kable_styling(full_width = FALSE)
+```
+
+Defined Terms:
+intercept: Baseline Performance Ratio (PR) level.
+
+ar1: Persistence (how much yesterday's PR carries over to today).
+
+cumulative_snow_mm: Direct PR change from snow depth.
+
+low_irradiation: Direct PR change on low-sunlight days.
+
+Our coefficients confirms that persistence (ar1) is highly significant across all regions, meaning a poor day's PR does effect the next. Low irradiance also usually causes a significant PR drop (p-value of 0 for low_irradiation). One interesting thing, only the Upper Midwest shows a statistically significant negative impact from the cumulative_snow_mm term which could mean that apart from the midwest, snow's primary effect is captured by the day-to-day carry-over, probably becuase it is very snowy there
+
+
+## Fitted vs. observed PR
+
+```{r}
+aug_tbl <- augment(model_fit)
+
+aug_tbl |>
+  ggplot(aes(date)) +
+  geom_line(aes(y = pr, color = "Observed"), linewidth = 0.6) +
+  geom_line(aes(y = .fitted, color = "Fitted"), linewidth = 0.6, linetype = "dashed") +
+  scale_color_manual(values = c("Observed" = "skyblue", "Fitted" = "darkred")) +
+  labs(
+    title = "Observed vs. fitted PR (by region)",
+    x = "Date",
+    y = "Performance ratio",
+    color = NULL
+  ) +
+  theme_minimal() +
+  facet_wrap(vars(region), scales = "free_x")
+```
+
+The dashed red lines on the plot represent how well the AR(1) model tracks the observed Performance Ratio (PR) over time. 
+
+## Results
+
+This time-series analysis provides statistical support that persistence is a related to daily PR, as yesterday's PR influences today's across all regions. Our findings show that after accounting for day-to-day carry-over, higher cumulative snow depth reduces daily PR (most significantly in the Upper Midwest), and low-irradiance days cause an immediate, additional PR drop across the majority of regions. 
