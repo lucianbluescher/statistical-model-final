@@ -117,17 +117,25 @@ window.Quarto = {
   <ul>
   <li><a href="#purpose" id="toc-purpose" class="nav-link active" data-scroll-target="#purpose">Purpose</a>
   <ul class="collapse">
-  <li><a href="#reference" id="toc-reference" class="nav-link" data-scroll-target="#reference">Reference:</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References:</a></li>
   </ul></li>
+  <li><a href="#data" id="toc-data" class="nav-link" data-scroll-target="#data">Data</a></li>
+  <li><a href="#directed-acyclic-graph-dag" id="toc-directed-acyclic-graph-dag" class="nav-link" data-scroll-target="#directed-acyclic-graph-dag">Directed Acyclic Graph (DAG)</a></li>
   <li><a href="#hypothesis" id="toc-hypothesis" class="nav-link" data-scroll-target="#hypothesis">Hypothesis</a></li>
-  <li><a href="#setup" id="toc-setup" class="nav-link" data-scroll-target="#setup">Setup</a></li>
-  <li><a href="#data-wrangling" id="toc-data-wrangling" class="nav-link" data-scroll-target="#data-wrangling">Data wrangling</a></li>
-  <li><a href="#dag-drivers-we-adjust-for" id="toc-dag-drivers-we-adjust-for" class="nav-link" data-scroll-target="#dag-drivers-we-adjust-for">DAG (drivers we adjust for)</a></li>
   <li><a href="#model-concept" id="toc-model-concept" class="nav-link" data-scroll-target="#model-concept">Model concept</a></li>
+  <li><a href="#data-wrangling" id="toc-data-wrangling" class="nav-link" data-scroll-target="#data-wrangling">Data wrangling</a></li>
+  <li><a href="#simulation" id="toc-simulation" class="nav-link" data-scroll-target="#simulation">Simulation</a>
+  <ul class="collapse">
+  <li><a href="#coefficient-comparison-true-vs-estimated" id="toc-coefficient-comparison-true-vs-estimated" class="nav-link" data-scroll-target="#coefficient-comparison-true-vs-estimated">Coefficient comparison (true vs estimated)</a></li>
+  <li><a href="#precision-phi-comparison" id="toc-precision-phi-comparison" class="nav-link" data-scroll-target="#precision-phi-comparison">Precision (phi) comparison</a></li>
+  </ul></li>
   <li><a href="#fit-beta-regression" id="toc-fit-beta-regression" class="nav-link" data-scroll-target="#fit-beta-regression">Fit beta regression</a></li>
-  <li><a href="#coefficients-tidy" id="toc-coefficients-tidy" class="nav-link" data-scroll-target="#coefficients-tidy">Coefficients (tidy)</a></li>
-  <li><a href="#effect-of-snow-depth-holding-other-factors" id="toc-effect-of-snow-depth-holding-other-factors" class="nav-link" data-scroll-target="#effect-of-snow-depth-holding-other-factors">Effect of snow depth (holding other factors)</a></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
+  <li><a href="#coefficients" id="toc-coefficients" class="nav-link" data-scroll-target="#coefficients">Coefficients</a></li>
+  <li><a href="#predictions" id="toc-predictions" class="nav-link" data-scroll-target="#predictions">Predictions</a></li>
+  <li><a href="#discussion" id="toc-discussion" class="nav-link" data-scroll-target="#discussion">Discussion</a>
+  <ul class="collapse">
+  <li><a href="#acknowledgments" id="toc-acknowledgments" class="nav-link" data-scroll-target="#acknowledgments">Acknowledgments</a></li>
+  </ul></li>
   </ul>
 </nav>
 </div>
@@ -164,78 +172,152 @@ window.Quarto = {
 </header>
 
 
+<p><img src="images/clipboard-841556536.png" class="img-fluid"> Image credit: <a href="https://www.revisionenergy.com/solar-information/solar-resources/10-reasons-go-solar/works-in-winter">Revision Energy</a></p>
+<section id="setup" class="level4">
+<h4 class="anchored" data-anchor-id="setup">Setup</h4>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Load required packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)  <span class="co"># Data wrangling</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)     <span class="co"># Read Excel source files</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)    <span class="co"># Clean names</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(betareg)    <span class="co"># Beta regression fitting</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)      <span class="co"># Tidy model outputs</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra) <span class="co"># Pretty tables</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggdag)      <span class="co"># DAG plotting</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)    <span class="co"># Graphing</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
 <section id="purpose" class="level2">
 <h2 class="anchored" data-anchor-id="purpose">Purpose</h2>
-<p>This blog post builds on Jackson &amp; Gunda’s (2021) machine learning analysis of United States solar systems, who showed how weather events, especially snow, can reduce photovoltaic (PV) performance measured as PR (performance ratio). This analysis uses a simple beta regression to link daily performance ratio (PR) to cumulative snow depth, low-irradiance conditions, and basic solar plant age/region effects.</p>
-<section id="reference" class="level3">
-<h3 class="anchored" data-anchor-id="reference">Reference:</h3>
+<p>This blog post builds on Jackson &amp; Gunda’s (2021) machine learning and random forest analysis of United States solar systems, who showed how weather events, especially snow, can reduce photovoltaic (PV) performance measured as PR (performance ratio). This goal of this analysis is to use a simple beta regression model to link daily performance ratio (PR) to cumulative snow depth, low irradiance conditions, and solar plant age/region effects.</p>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References:</h3>
 <p>Jackson, N. D., &amp; Gunda, T. (2021). Evaluation of extreme weather impacts on utility-scale photovoltaic plant performance in the United States. Applied Energy, 302, 117508. https://doi.org/10.1016/j.apenergy.2021.117508</p>
 </section>
 </section>
-<section id="hypothesis" class="level2">
-<h2 class="anchored" data-anchor-id="hypothesis">Hypothesis</h2>
-<p>After accounting for plant age and regional differences, cumulative snow depth and low-irradiance will reduce the performance ratio (PR) of photovoltaics.</p>
-</section>
-<section id="setup" class="level2">
-<h2 class="anchored" data-anchor-id="setup">Setup</h2>
+<section id="data" class="level2">
+<h2 class="anchored" data-anchor-id="data">Data</h2>
+<p>The entire data set can be downloaded through the Open Energy Data Initiative <a href="https://data.openei.org/submissions/4055">(OEDI)</a>.</p>
+<p>The dataset comes processed by Jackson &amp; Gunda, the variables used in this analysis are from two sources. Production data records are from Sandia’s PV Reliability, Operations, and Maintenance <a href="https://www.osti.gov/servlets/purl/1337988">(PVROM)</a> database—50,000+ tickets across 837 sites. PVROM also includes commissioning dates which are used to calculate age and PV climate zones. Irradiance data were augmented by Jackson &amp; Gunda with open-access weather from <a href="https://scholar.google.com/scholar?q=Storm%20events%20database.%20URL%20https%3A%2F%2Fwww.ncdc.noaa.gov%2Fstormevents%2F">NOAA Storm Events</a>, <a href="https://scholar.google.com/scholar?q=PRISM%20Climate%20Group.%20Oregon%20State%20University.%20Recent%20Years%20(Jan%201981%20-%20Feb%202020)">PRISM</a>, and <a href="https://scholar.google.com/scholar?q=Global%20historical%20climate%20network%20daily.%20URL%20https%3A%2F%2Fwww.ncei.noaa.gov%2Fdata%2Fglobal-historical-climatology-network-daily%2F">GHCN</a> for 2008–2020.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(betareg)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dagitty)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Load data</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>oedi_data <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/oedi_data.xlsx"</span>, <span class="at">sheet =</span> <span class="st">"data"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>vars_of_interest <span class="ot">&lt;-</span> <span class="fu">tribble</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="sc">~</span><span class="st">`</span><span class="at">Variable name</span><span class="st">`</span>, <span class="sc">~</span><span class="st">`</span><span class="at">Analysis Name</span><span class="st">`</span>, <span class="sc">~</span><span class="st">`</span><span class="at">Description</span><span class="st">`</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"PR"</span>,               <span class="st">"PR"</span>,       <span class="st">"Performance ratio as defined by IEC 61724"</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"NOAAClimRegion"</span>,   <span class="st">"Region"</span>,             <span class="st">"NOAA climate region (factor)"</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"cumulative_snow_mm"</span>,<span class="st">"Snow"</span>,<span class="st">"Cumulative total snowfall since the start of the snow event (mm)"</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"low_irradiation"</span>,  <span class="st">"LowIrr"</span>,    <span class="st">"Binary indicator if irradiance is categorized as low"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"plant_age_months"</span>, <span class="st">"Age"</span>,   <span class="st">"Number of months since commissioning"</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>vars_of_interest <span class="sc">|&gt;</span> </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">caption =</span> <span class="st">"Variables used in this analysis"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="table caption-top table-sm table-striped small">
+<caption>Variables used in this analysis</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Variable name</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Analysis Name</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">PR</td>
+<td style="text-align: left;">PR</td>
+<td style="text-align: left;">Performance ratio as defined by IEC 61724</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">NOAAClimRegion</td>
+<td style="text-align: left;">Region</td>
+<td style="text-align: left;">NOAA climate region (factor)</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">cumulative_snow_mm</td>
+<td style="text-align: left;">Snow</td>
+<td style="text-align: left;">Cumulative total snowfall since the start of the snow event (mm)</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">low_irradiation</td>
+<td style="text-align: left;">LowIrr</td>
+<td style="text-align: left;">Binary indicator if irradiance is categorized as low</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">plant_age_months</td>
+<td style="text-align: left;">Age</td>
+<td style="text-align: left;">Number of months since commissioning</td>
+</tr>
+</tbody>
+</table>
+</div>
 </div>
 </section>
-<section id="data-wrangling" class="level2">
-<h2 class="anchored" data-anchor-id="data-wrangling">Data wrangling</h2>
-<p>PR must be strictly between 0 and 1 for beta regression. We drop rows with missing inputs and slightly reduce 1s.</p>
+<section id="directed-acyclic-graph-dag" class="level2">
+<h2 class="anchored" data-anchor-id="directed-acyclic-graph-dag">Directed Acyclic Graph (DAG)</h2>
+<p>We make a DAG to understand how our variables might interact with each other in order to form a hypothesis and fit our model.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>notzero <span class="ot">&lt;-</span> <span class="fl">1e-4</span> <span class="co"># Basically 0</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>beta_df <span class="ot">&lt;-</span> oedi_data <span class="sc">|&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">region =</span> <span class="fu">factor</span>(noaa_clim_region),</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> <span class="fu">as.Date</span>(date),</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">pr_beta =</span> <span class="fu">pmin</span>(<span class="fu">pmax</span>(pr, notzero), <span class="dv">1</span> <span class="sc">-</span> notzero)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(region, date, pr_beta, cumulative_snow_mm, low_irradiation, plant_age_months) <span class="sc">|&gt;</span></span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(region, date, pr_beta, pr, cumulative_snow_mm, low_irradiation, plant_age_months)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(beta_df)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Rows: 37,604
-Columns: 7
-$ region             &lt;fct&gt; West, West, West, West, West, West, West, West, Wes…
-$ date               &lt;date&gt; 2018-04-01, 2018-04-02, 2018-04-03, 2018-04-04, 20…
-$ pr_beta            &lt;dbl&gt; 0.8259221, 0.7884559, 0.7735239, 0.7986374, 0.78721…
-$ pr                 &lt;dbl&gt; 0.8259221, 0.7884559, 0.7735239, 0.7986374, 0.78721…
-$ cumulative_snow_mm &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
-$ low_irradiation    &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, …
-$ plant_age_months   &lt;dbl&gt; 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19,…</code></pre>
-</div>
-</div>
-</section>
-<section id="dag-drivers-we-adjust-for" class="level2">
-<h2 class="anchored" data-anchor-id="dag-drivers-we-adjust-for">DAG (drivers we adjust for)</h2>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>pr_dag <span class="ot">&lt;-</span> <span class="fu">dagitty</span>(<span class="st">"</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">dag {</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">  Region -&gt; Snow</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">  Region -&gt; LowIrr</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">  Region -&gt; PR</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="st">  PlantAge -&gt; PR</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="st">  Snow -&gt; PR</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="st">  LowIrr -&gt; PR</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="st">}</span></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="st">"</span>)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(pr_dag)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pr_dag <span class="ot">&lt;-</span> <span class="fu">dagify</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  Performance_Ratio <span class="sc">~</span> Region <span class="sc">+</span> Cumulative_Snow <span class="sc">+</span> Low_Irradiation <span class="sc">+</span> Plant_Age,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  Cumulative_Snow   <span class="sc">~</span> Region,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  Low_Irradiation   <span class="sc">~</span> Region,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">exposure =</span> <span class="cn">NULL</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">outcome  =</span> <span class="st">"Performance_Ratio"</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy_dagitty</span>()</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Label/shape maps</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>label_map <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Region =</span> <span class="st">"Region"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Cumulative_Snow =</span> <span class="st">"Cumulative </span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">  Snow"</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Low_Irradiation =</span> <span class="st">"Low </span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="st">  Irradiation"</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">Plant_Age =</span> <span class="st">"Plant </span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="st">  Age"</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">Performance_Ratio =</span> <span class="st">"Performance </span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="st">  Ratio"</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>shape_map <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="at">Region =</span> <span class="dv">24</span>,           </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  <span class="at">Cumulative_Snow =</span> <span class="dv">21</span>,    </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">Low_Irradiation =</span> <span class="dv">21</span>,    </span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">Plant_Age =</span> <span class="dv">22</span>,          </span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">Performance_Ratio =</span> <span class="dv">23</span>   </span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pr_dag, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y, <span class="at">xend =</span> xend, <span class="at">yend =</span> yend)) <span class="sc">+</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dag_edges</span>(<span class="at">end_cap =</span> ggraph<span class="sc">::</span><span class="fu">circle</span>(<span class="dv">10</span>, <span class="st">"mm"</span>), <span class="at">edge_width =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dag_point</span>(</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">shape =</span> name),</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">20</span>,          </span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"white"</span>,</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"#2d2d2d"</span>,</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="at">stroke =</span> <span class="fl">0.8</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_shape_manual</span>(<span class="at">values =</span> shape_map, <span class="at">labels =</span> label_map, <span class="at">breaks =</span> <span class="fu">names</span>(label_map)) <span class="sc">+</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_dag_text</span>(</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">label =</span> label_map[name]),</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    <span class="at">col =</span> <span class="st">"black"</span>,</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">size =</span> <span class="dv">2</span>          </span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>() <span class="sc">+</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_dag</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"PV Performance DAG"</span>) <span class="sc">+</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.title =</span> <span class="fu">element_text</span>(<span class="at">hjust =</span> <span class="fl">0.5</span>, <span class="at">size =</span> <span class="dv">13</span>, <span class="at">face =</span> <span class="st">"bold"</span>),</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>    <span class="at">plot.margin =</span> <span class="fu">margin</span>(<span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>, <span class="dv">10</span>)</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
@@ -244,55 +326,269 @@ $ plant_age_months   &lt;dbl&gt; 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19,
 </div>
 </div>
 </div>
-<p>Region can affect weather and baseline PR, snow and low irradiance directly affect PR, plant age captures aging machinery effects.</p>
+<p>The DAG explains our causal story for photovoltaic performance. Region shapes local climate, influencing both snowfall and low irradiance conditions, and may also reflect regional baseline differences in PR (installation practices, maintenance norms). Snow and low irradiance directly reduce PR by reducing light or covering panels. Plant age captures aging and wear that also reduce PR over time. Together, the graph matches our hypothesis: after accounting for plant age and regional differences, cumulative snow depth and low irradiance are expected to lower the performance ratio.</p>
+</section>
+<section id="hypothesis" class="level2">
+<h2 class="anchored" data-anchor-id="hypothesis">Hypothesis</h2>
+<p>After accounting for plant age (Age) and regional differences, cumulative snow depth and low irradiance (LowIrr) will reduce the performance ratio (PR) of photovoltaics.</p>
+<p>Null hypothesis (<span class="math inline">\(H0\)</span>): <span class="math display">\[
+\beta_{\text{Snow}} = 0 \ \text{and}\ \beta_{\text{LowIrr}} = 0
+\]</span> (no effect of snow or low irradiance on PR)</p>
+<p>Alternative hypothesis (<span class="math inline">\(HA\)</span>): <span class="math display">\[
+\beta_{\text{Snow}} &lt; 0 \ \text{and}\ \beta_{\text{LowIrr}} &lt; 0
+\]</span> (greater snow depth and low irradiance reduce PR)</p>
 </section>
 <section id="model-concept" class="level2">
 <h2 class="anchored" data-anchor-id="model-concept">Model concept</h2>
-<p>Beta regression with logit link:</p>
-<p>logit(μ) = β0 + β1·Snow + β2·LowIrr + β3·Age + Region effects</p>
-<p>PR ~ Beta(μ, φ)</p>
+<p>We model proportional response PR with a beta regression using a logit link:</p>
+<p><span class="math display">\[
+\text{PR} \mid \mu, \phi \sim \text{Beta}(\mu, \phi)\\
+\]</span></p>
+<p><span class="math display">\[
+\text{logit}(\mu) = \beta_0 + \beta_1\,\text{Snow} + \beta_2\,\text{LowIrr} + \beta_3\,\text{Age} + \text{Region}
+\]</span></p>
+<p>Here, <span class="math inline">\(\mu_i \in (0,1)\)</span> is the mean after transforming the linear predictor through the logit, and <span class="math inline">\(\phi\)</span> (phi) is the precision parameter (larger <span class="math inline">\(\phi\)</span> means less variance, more precise). Region effects capture geographic differences across locations, while Snow, LowIrr, and Age quantify how environmental conditions and plant age shift the expected proportion.</p>
+</section>
+<section id="data-wrangling" class="level2">
+<h2 class="anchored" data-anchor-id="data-wrangling">Data wrangling</h2>
+<p>First we load our data, then prepare the performance ratio (PR) for beta regression by restricting values to (0, 1) which is an assumption of the model. We drop the 457 rows with PR ≥ 1 out of 51,504 total (~0.009, so minimal impact). Then nudge exact zeros to a tiny positive value so they remain in the model, as a 0 means no photovoltaic output. PR was calculated by Jackson and Gunda following <a href="https://www.hukseflux.com/applications/solar-energy-pv-system-performance-monitoring/iec-61724-12021-standard-for-pv">EC 61724</a> and is effectively a percentage of a theoretical maximum—so values above 1 indicate anomalies (e.g., underestimation of the plant’s theoretical output, instrumentation or data errors, or a single nonrepresentative point where the array appears to outperform its rating), therefore for the purposes of this model we remove values 1 or greater.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load data</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>oedi_data <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">"data/oedi_data.xlsx"</span>, <span class="at">sheet =</span> <span class="st">"data"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>notzero <span class="ot">&lt;-</span> <span class="fl">1e-4</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>beta_df <span class="ot">&lt;-</span> oedi_data <span class="sc">|&gt;</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(pr <span class="sc">&lt;</span> <span class="dv">1</span>) <span class="sc">|&gt;</span>  <span class="co"># remove pr &gt;= 1</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">region =</span> <span class="fu">factor</span>(noaa_clim_region),</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> <span class="fu">as.Date</span>(date),</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">pr_beta =</span> <span class="fu">if_else</span>(pr <span class="sc">==</span> <span class="dv">0</span>, notzero, pr)  <span class="co"># shift zeros</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(region, date, pr_beta, cumulative_snow_mm, low_irradiation, plant_age_months) <span class="sc">|&gt;</span></span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(region, date, pr_beta, pr, cumulative_snow_mm, low_irradiation, plant_age_months)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="simulation" class="level2">
+<h2 class="anchored" data-anchor-id="simulation">Simulation</h2>
+<p>Before running the model on our data, we simulate from the beta regression to verify that our fitted model can return parameters we chose. This gives us a unambiguous test before trusting the model on real environmental data.</p>
+<p>Recalling our fitted model, we choose parameters and predictors. Set coefficients and a phi (precision parameter of the Beta distribution) that controls variance around the mean to ensure realistic ranges for our simulation predictor values.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Choose parameters and predictors </span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">400</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>beta0   <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">1.0</span>          <span class="co"># intercept</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>beta1   <span class="ot">&lt;-</span>  <span class="fl">0.003</span>        <span class="co"># effect per mm snow</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>beta2   <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.8</span>          <span class="co"># low irradiation indicator</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>beta3   <span class="ot">&lt;-</span>  <span class="fl">0.02</span>         <span class="co"># per month of plant age</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>phi     <span class="ot">&lt;-</span> <span class="dv">30</span>            <span class="co"># precision (larger = less variance)</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>region_eff <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">north =</span>  <span class="fl">0.0</span>,          <span class="co"># baseline</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">south =</span>  <span class="fl">0.3</span>,</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">east  =</span> <span class="sc">-</span><span class="fl">0.2</span>,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">west  =</span>  <span class="fl">0.1</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate predictors</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>Snow   <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="dv">0</span>, <span class="dv">500</span>)                  <span class="co"># cumulative snow in mm</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>LowIrr <span class="ot">&lt;-</span> <span class="fu">rbinom</span>(n, <span class="dv">1</span>, <span class="fl">0.35</span>)                <span class="co"># 0/1 indicator</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>Age    <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="dv">6</span>, <span class="dv">36</span>)                   <span class="co"># plant age in months</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>Region <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">names</span>(region_eff), n, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Next we will generate responses. Build the linear predictor, inverse-logit to get μ, then sample PR from <span class="math inline">\(Beta(μ·phi, (1−μ)·phi)\)</span>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate response from the beta model</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>linpred <span class="ot">&lt;-</span> beta0 <span class="sc">+</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  beta1 <span class="sc">*</span> Snow <span class="sc">+</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  beta2 <span class="sc">*</span> LowIrr <span class="sc">+</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  beta3 <span class="sc">*</span> Age <span class="sc">+</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">unname</span>(region_eff[Region])</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>mu <span class="ot">&lt;-</span> <span class="fu">plogis</span>(linpred)  <span class="co"># inverse-logit to keep (0,1)</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>shape1 <span class="ot">&lt;-</span> mu <span class="sc">*</span> phi</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>shape2 <span class="ot">&lt;-</span> (<span class="dv">1</span> <span class="sc">-</span> mu) <span class="sc">*</span> phi</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>PR <span class="ot">&lt;-</span> <span class="fu">rbeta</span>(n, shape1, shape2)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>sim_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  PR, Snow, LowIrr, Age,</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">Region =</span> <span class="fu">factor</span>(Region, <span class="at">levels =</span> <span class="fu">names</span>(region_eff))</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Fit the Beta regression model using our simulated data. Use <code>betareg</code> with the same formula and link to estimate coefficients and precision.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit the beta regression </span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>sim_fit <span class="ot">&lt;-</span> <span class="fu">betareg</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  PR <span class="sc">~</span> Snow <span class="sc">+</span> LowIrr <span class="sc">+</span> Age <span class="sc">+</span> Region,</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> sim_df,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">link =</span> <span class="st">"logit"</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Now we can check our simulated estimates. Present tables comparing true vs.&nbsp;estimated coefficients and true vs.&nbsp;estimated phi; good alignment indicates the model and simulation are coherent.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check estimates vs true parameters </span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>true_params <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">term  =</span> <span class="fu">c</span>(<span class="st">"(Intercept)"</span>, <span class="st">"Snow"</span>, <span class="st">"LowIrr"</span>, <span class="st">"Age"</span>,</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>            <span class="fu">paste0</span>(<span class="st">"Region"</span>, <span class="fu">names</span>(region_eff)[<span class="sc">-</span><span class="dv">1</span>])),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">true  =</span> <span class="fu">c</span>(beta0, beta1, beta2, beta3, <span class="fu">unname</span>(region_eff[<span class="sc">-</span><span class="dv">1</span>]))</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>est_params <span class="ot">&lt;-</span> broom<span class="sc">::</span><span class="fu">tidy</span>(sim_fit) <span class="sc">|&gt;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(term, estimate, std.error)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<section id="coefficient-comparison-true-vs-estimated" class="level3">
+<h3 class="anchored" data-anchor-id="coefficient-comparison-true-vs-estimated">Coefficient comparison (true vs estimated)</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>coef_compare <span class="ot">&lt;-</span> true_params <span class="sc">|&gt;</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(est_params, <span class="at">by =</span> <span class="st">"term"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>coef_compare <span class="sc">|&gt;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kbl</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Term"</span>, <span class="st">"True"</span>, <span class="st">"Estimate"</span>, <span class="st">"Std. Error"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_paper</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="lightable-paper caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Term</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Estimate</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Std. Error</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">(Intercept)</td>
+<td style="text-align: right;">-1.000</td>
+<td style="text-align: right;">-1.059</td>
+<td style="text-align: right;">0.069</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Snow</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: right;">0.003</td>
+<td style="text-align: right;">0.000</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">LowIrr</td>
+<td style="text-align: right;">-0.800</td>
+<td style="text-align: right;">-0.785</td>
+<td style="text-align: right;">0.039</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Age</td>
+<td style="text-align: right;">0.020</td>
+<td style="text-align: right;">0.022</td>
+<td style="text-align: right;">0.002</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Regionsouth</td>
+<td style="text-align: right;">0.300</td>
+<td style="text-align: right;">0.277</td>
+<td style="text-align: right;">0.052</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Regioneast</td>
+<td style="text-align: right;">-0.200</td>
+<td style="text-align: right;">-0.220</td>
+<td style="text-align: right;">0.052</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Regionwest</td>
+<td style="text-align: right;">0.100</td>
+<td style="text-align: right;">0.090</td>
+<td style="text-align: right;">0.053</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<section id="precision-phi-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="precision-phi-comparison">Precision (phi) comparison</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>phi_df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">quantity =</span> <span class="fu">c</span>(<span class="st">"phi (true)"</span>, <span class="st">"phi_hat (estimated)"</span>),</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">value    =</span> <span class="fu">c</span>(phi, sim_fit<span class="sc">$</span>coefficients<span class="sc">$</span>precision)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>phi_df <span class="sc">|&gt;</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kbl</span>(<span class="at">digits =</span> <span class="dv">3</span>, <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Quantity"</span>, <span class="st">"Value"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_paper</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="lightable-paper caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;" data-quarto-table-cell-role="th">Quantity</th>
+<th style="text-align: right;" data-quarto-table-cell-role="th">Value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">phi (true)</td>
+<td style="text-align: right;">30.000</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">phi_hat (estimated)</td>
+<td style="text-align: right;">30.543</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>Our simulated results show estimated coefficients very close to our true values (e.g., snow ~0.003, LowIrr ~–0.79 vs –0.80, Age ~0.022 vs 0.020, region contrasts within ~0.02–0.03 of truth), and the precision parameter is essentially on target (φ̂ ≈ 30.54 vs 30). This alignment shows the model can retrieve known effects and variance from data with similar signal-to-noise, giving us a clear go ahead to fit real observations.</p>
+</section>
 </section>
 <section id="fit-beta-regression" class="level2">
 <h2 class="anchored" data-anchor-id="fit-beta-regression">Fit beta regression</h2>
+<p>Now that we confirmed our model works properly, we can fit the Beta regression with our real data. As a reminder, the model includes cumulative snowfall (cumulative_snow_mm), an indicator for low irradiation (low_irradiation), plant age in months (plant_age_months), and region effects (region) to capture geographic differences.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>beta_fit <span class="ot">&lt;-</span> <span class="fu">betareg</span>(</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  pr_beta <span class="sc">~</span> cumulative_snow_mm <span class="sc">+</span> low_irradiation <span class="sc">+</span> plant_age_months <span class="sc">+</span> region,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> beta_df,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">link =</span> <span class="st">"logit"</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>beta_fit</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
-Call:
-betareg(formula = pr_beta ~ cumulative_snow_mm + low_irradiation + plant_age_months + 
-    region, data = beta_df, link = "logit")
-
-Coefficients (mean model with logit link):
-        (Intercept)   cumulative_snow_mm      low_irradiation  
-          5.555e-01            1.764e-05           -1.084e+00  
-   plant_age_months      regionNorthwest    regionOhio Valley  
-         -4.214e-03           -1.562e+00            1.377e-01  
-    regionSoutheast      regionSouthwest  regionUpper Midwest  
-          1.751e-01           -1.432e+00           -3.457e-01  
-         regionWest  
-          1.041e-01  
-
-Phi coefficients (precision model with identity link):
-(phi)  
-1.413  </code></pre>
-</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>beta_fit <span class="ot">&lt;-</span> <span class="fu">betareg</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  pr_beta <span class="sc">~</span> cumulative_snow_mm <span class="sc">+</span> low_irradiation <span class="sc">+</span> plant_age_months <span class="sc">+</span> region,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> beta_df,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">link =</span> <span class="st">"logit"</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
 </section>
-<section id="coefficients-tidy" class="level2">
-<h2 class="anchored" data-anchor-id="coefficients-tidy">Coefficients (tidy)</h2>
+<section id="coefficients" class="level2">
+<h2 class="anchored" data-anchor-id="coefficients">Coefficients</h2>
+<p>Let’s take a look at our model coefficients.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>coef_tbl <span class="ot">&lt;-</span> <span class="fu">tidy</span>(beta_fit) <span class="sc">|&gt;</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(term, estimate, std.error, statistic, p.value)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>coef_tbl <span class="sc">|&gt;</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>, <span class="at">caption =</span> <span class="st">"Beta regression on PR"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>coef_tbl <span class="ot">&lt;-</span> <span class="fu">tidy</span>(beta_fit) <span class="sc">|&gt;</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(term, estimate, std.error, statistic, p.value)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>coef_tbl <span class="sc">|&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>, <span class="at">caption =</span> <span class="st">"Beta regression on PR"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output-display">
 <table class="table caption-top table-sm table-striped small">
 <caption>Beta regression on PR</caption>
@@ -308,126 +604,246 @@ Phi coefficients (precision model with identity link):
 <tbody>
 <tr class="odd">
 <td style="text-align: left;">(Intercept)</td>
-<td style="text-align: right;">0.556</td>
+<td style="text-align: right;">0.797</td>
 <td style="text-align: right;">0.026</td>
-<td style="text-align: right;">21.506</td>
+<td style="text-align: right;">31.069</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">cumulative_snow_mm</td>
 <td style="text-align: right;">0.000</td>
 <td style="text-align: right;">0.000</td>
-<td style="text-align: right;">1.017</td>
-<td style="text-align: right;">0.309</td>
+<td style="text-align: right;">0.551</td>
+<td style="text-align: right;">0.582</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">low_irradiation</td>
-<td style="text-align: right;">-1.084</td>
+<td style="text-align: right;">-1.160</td>
 <td style="text-align: right;">0.015</td>
-<td style="text-align: right;">-70.133</td>
+<td style="text-align: right;">-75.911</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">plant_age_months</td>
-<td style="text-align: right;">-0.004</td>
+<td style="text-align: right;">-0.010</td>
 <td style="text-align: right;">0.000</td>
-<td style="text-align: right;">-13.892</td>
+<td style="text-align: right;">-32.497</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">regionNorthwest</td>
-<td style="text-align: right;">-1.562</td>
-<td style="text-align: right;">0.045</td>
-<td style="text-align: right;">-34.906</td>
+<td style="text-align: right;">-1.708</td>
+<td style="text-align: right;">0.044</td>
+<td style="text-align: right;">-38.636</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">regionOhio Valley</td>
-<td style="text-align: right;">0.138</td>
-<td style="text-align: right;">0.044</td>
-<td style="text-align: right;">3.134</td>
-<td style="text-align: right;">0.002</td>
+<td style="text-align: right;">0.288</td>
+<td style="text-align: right;">0.043</td>
+<td style="text-align: right;">6.657</td>
+<td style="text-align: right;">0.000</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">regionSoutheast</td>
-<td style="text-align: right;">0.175</td>
+<td style="text-align: right;">0.231</td>
 <td style="text-align: right;">0.024</td>
-<td style="text-align: right;">7.256</td>
+<td style="text-align: right;">9.707</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">regionSouthwest</td>
-<td style="text-align: right;">-1.432</td>
+<td style="text-align: right;">-1.344</td>
 <td style="text-align: right;">0.037</td>
-<td style="text-align: right;">-38.410</td>
+<td style="text-align: right;">-36.516</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">regionUpper Midwest</td>
-<td style="text-align: right;">-0.346</td>
-<td style="text-align: right;">0.047</td>
-<td style="text-align: right;">-7.347</td>
+<td style="text-align: right;">-0.518</td>
+<td style="text-align: right;">0.046</td>
+<td style="text-align: right;">-11.205</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">regionWest</td>
-<td style="text-align: right;">0.104</td>
-<td style="text-align: right;">0.022</td>
-<td style="text-align: right;">4.836</td>
-<td style="text-align: right;">0.000</td>
+<td style="text-align: right;">0.067</td>
+<td style="text-align: right;">0.021</td>
+<td style="text-align: right;">3.145</td>
+<td style="text-align: right;">0.002</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">(phi)</td>
-<td style="text-align: right;">1.413</td>
-<td style="text-align: right;">0.009</td>
-<td style="text-align: right;">162.089</td>
+<td style="text-align: right;">1.566</td>
+<td style="text-align: right;">0.010</td>
+<td style="text-align: right;">158.873</td>
 <td style="text-align: right;">0.000</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>The most impactful predictor is low irradiation, which is associated with a large, highly significant decrease (a logit shift of -1.084) in the logit of PR. Plant age also significantly drives PR lower as it increases (<span class="math inline">\(\text{logit}(\text{PR})\)</span> decreases by <span class="math inline">\(0.004\)</span> per month). For comparison, the amount of cumulative snow is not a statistically significant predictor of PR in this model (<span class="math inline">\(p=0.309\)</span>).</p>
+<p>The strongest effect comes from low irradiation: a logit shift of about −1.16 (p &lt; 0.001), meaning low irradiance days substantially reduce PR.</p>
+<p>Age also pulls PR down (−0.01 per month, p &lt; 0.001), indicating performance degrades as plants age.</p>
+<p>Snow is not statistically significant (p = 0.58) in this model, suggesting snow depth alone isn’t explaining PR changes once irradiation, age, and region are included.</p>
+<p>Region effects show meaningful baseline differences: Northwest and Southwest are lower than the reference region; Ohio Valley, Southeast, and West are higher; Upper Midwest is lower. The precision parameter (phi) is well-estimated (1.57, p &lt; 0.001), indicating reasonable dispersion fit.</p>
 </section>
-<section id="effect-of-snow-depth-holding-other-factors" class="level2">
-<h2 class="anchored" data-anchor-id="effect-of-snow-depth-holding-other-factors">Effect of snow depth (holding other factors)</h2>
+<section id="predictions" class="level2">
+<h2 class="anchored" data-anchor-id="predictions">Predictions</h2>
+<p>Because the betareg package won’t give a standard error (SE) (se.fit) via the predict() function, we build the 95% confidence intervals ourselves on the link (logit) scale using our model coefficients standard errors.</p>
+<p>The idea is using Walds logic: add/subtract 1.96×SE to the linear predictor, then map through the inverse logit. For each coefficient, the upper-limit is <span class="math inline">\(\beta_1\)</span> + 1.96*SE; multiplied by our simulated predictor values (LowIrr). We repeat that for each linear predictor and lower-limit then propagate uncertainty by combining the design matrix with the covariance-matrix to get its SE. Lastly, we convert both the means and the bounds back to prediction space. Now we have a function to use for our prediction grids.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>region_ref <span class="ot">&lt;-</span> beta_df <span class="sc">|&gt;</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(region, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">|&gt;</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(region)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>snow_grid <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">cumulative_snow_mm =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="fu">quantile</span>(beta_df<span class="sc">$</span>cumulative_snow_mm, <span class="fl">0.95</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">length.out =</span> <span class="dv">100</span>),</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">low_irradiation =</span> <span class="dv">0</span>,</span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">plant_age_months =</span> <span class="fu">median</span>(beta_df<span class="sc">$</span>plant_age_months, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">region =</span> <span class="fu">factor</span>(region_ref, <span class="at">levels =</span> <span class="fu">levels</span>(beta_df<span class="sc">$</span>region))</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>snow_grid <span class="ot">&lt;-</span> snow_grid <span class="sc">|&gt;</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pred_pr =</span> <span class="fu">predict</span>(beta_fit, <span class="at">newdata =</span> snow_grid, <span class="at">type =</span> <span class="st">"response"</span>))</span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>snow_grid <span class="sc">|&gt;</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(cumulative_snow_mm, pred_pr)) <span class="sc">+</span></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"purple"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Predicted PR vs. snow depth (typical irradiance)"</span>,</span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Cumulative snow depth (mm)"</span>,</span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Predicted performance ratio"</span></span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Use the fitted model’s factor coding, coefficient vector, and covariance matrix so new predictions use the same encoding.</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>mm_orig     <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(beta_fit)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>contr_orig  <span class="ot">&lt;-</span> <span class="fu">attr</span>(mm_orig, <span class="st">"contrasts"</span>)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>beta_mean   <span class="ot">&lt;-</span> <span class="fu">coef</span>(beta_fit, <span class="at">model =</span> <span class="st">"mean"</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>beta_names  <span class="ot">&lt;-</span> <span class="fu">names</span>(beta_mean)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>vc_mean     <span class="ot">&lt;-</span> <span class="fu">vcov</span>(beta_fit, <span class="at">model =</span> <span class="st">"mean"</span>)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Rebuild the design matrix for the new grid with those contrasts and align columns to the stored coefficient order.</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>predict_with_ci <span class="ot">&lt;-</span> <span class="cf">function</span>(fit, newdata) {</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  tt <span class="ot">&lt;-</span> <span class="fu">delete.response</span>(<span class="fu">terms</span>(fit))</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  X  <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(tt, newdata, <span class="at">contrasts.arg =</span> contr_orig)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Align columns to coefficient order</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>  X  <span class="ot">&lt;-</span> X[, beta_names, drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Compute the linear predictor</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>  eta <span class="ot">&lt;-</span> <span class="fu">as.vector</span>(X <span class="sc">%*%</span> beta_mean)</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="co">#Compute its standard error from X V Xᵀ: take the diagonal and square-root to get one SE per row.</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>  se  <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">rowSums</span>((X <span class="sc">%*%</span> vc_mean[beta_names, beta_names, <span class="at">drop =</span> <span class="cn">FALSE</span>]) <span class="sc">*</span> X))</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Make 95% Wald limits on the link scale (eta ± 1.96*SE) and pass fit/low/high through plogis to get PR-scale predictions and bounds.</span></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">pred_pr    =</span> <span class="fu">plogis</span>(eta),</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">pred_pr_lo =</span> <span class="fu">plogis</span>(eta <span class="sc">-</span> <span class="fl">1.96</span> <span class="sc">*</span> se),</span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">pred_pr_hi =</span> <span class="fu">plogis</span>(eta <span class="sc">+</span> <span class="fl">1.96</span> <span class="sc">*</span> se)</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<p>Because we are holding region constant in our model while varying snow or irradiance we need to pick a Region to use as a reference for our predictions. We choose the region with the most data to make the plotted effects reflect typical conditions rather than being driven by a factor level with few observations.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reference region (most available data)</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>region_ref <span class="ot">&lt;-</span> beta_df <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(region, <span class="at">sort =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span>) <span class="sc">|&gt;</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(region)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Grid for snow effect</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>snow_grid <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">cumulative_snow_mm =</span> <span class="fu">seq</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">0</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">quantile</span>(beta_df<span class="sc">$</span>cumulative_snow_mm, <span class="fl">0.95</span>, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">length.out =</span> <span class="dv">120</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  ),</span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">low_irradiation =</span> <span class="dv">0</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">plant_age_months =</span> <span class="fu">median</span>(beta_df<span class="sc">$</span>plant_age_months, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">region =</span> <span class="fu">factor</span>(region_ref, <span class="at">levels =</span> <span class="fu">levels</span>(beta_df<span class="sc">$</span>region))</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>snow_grid <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(snow_grid, <span class="fu">predict_with_ci</span>(beta_fit, snow_grid))</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot for snow effect</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>p_snow <span class="ot">&lt;-</span> snow_grid <span class="sc">|&gt;</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(cumulative_snow_mm, pred_pr)) <span class="sc">+</span></span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> pred_pr_lo, <span class="at">ymax =</span> pred_pr_hi),</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>              <span class="at">fill =</span> <span class="st">"#c7d4ff"</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">color =</span> <span class="st">"#3b4cc0"</span>, <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Predicted PR vs. cumulative snow (typical irradiance)"</span>,</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Cumulative snow depth (mm)"</span>,</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Predicted performance ratio"</span>,</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Snow slope is near zero; PR stays effectively flat across observed snow depths."</span></span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span><span class="fu">number_format</span>(<span class="at">accuracy =</span> <span class="fl">0.001</span>)) <span class="sc">+</span></span>
+<span id="cb15-27"><a href="#cb15-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span>
+<span id="cb15-28"><a href="#cb15-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-29"><a href="#cb15-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-30"><a href="#cb15-30" aria-hidden="true" tabindex="-1"></a><span class="co"># Grid for low irradiance effect </span></span>
+<span id="cb15-31"><a href="#cb15-31" aria-hidden="true" tabindex="-1"></a>irr_grid <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb15-32"><a href="#cb15-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">low_irradiation =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb15-33"><a href="#cb15-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">cumulative_snow_mm =</span> <span class="fu">median</span>(beta_df<span class="sc">$</span>cumulative_snow_mm, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-34"><a href="#cb15-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">plant_age_months =</span> <span class="fu">median</span>(beta_df<span class="sc">$</span>plant_age_months, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb15-35"><a href="#cb15-35" aria-hidden="true" tabindex="-1"></a>  <span class="at">region =</span> <span class="fu">factor</span>(region_ref, <span class="at">levels =</span> <span class="fu">levels</span>(beta_df<span class="sc">$</span>region))</span>
+<span id="cb15-36"><a href="#cb15-36" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-37"><a href="#cb15-37" aria-hidden="true" tabindex="-1"></a>irr_grid <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(irr_grid, <span class="fu">predict_with_ci</span>(beta_fit, irr_grid)) <span class="sc">|&gt;</span></span>
+<span id="cb15-38"><a href="#cb15-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">low_irradiation =</span> <span class="fu">factor</span>(low_irradiation, <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Normal"</span>, <span class="st">"Low irradiance"</span>)))</span>
+<span id="cb15-39"><a href="#cb15-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-40"><a href="#cb15-40" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot for low irradiance effect</span></span>
+<span id="cb15-41"><a href="#cb15-41" aria-hidden="true" tabindex="-1"></a>p_irr <span class="ot">&lt;-</span> irr_grid <span class="sc">|&gt;</span></span>
+<span id="cb15-42"><a href="#cb15-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(low_irradiation, pred_pr, <span class="at">fill =</span> low_irradiation)) <span class="sc">+</span></span>
+<span id="cb15-43"><a href="#cb15-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">color =</span> <span class="st">"white"</span>, <span class="at">width =</span> <span class="fl">0.55</span>) <span class="sc">+</span></span>
+<span id="cb15-44"><a href="#cb15-44" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> pred_pr_lo, <span class="at">ymax =</span> pred_pr_hi), <span class="at">width =</span> <span class="fl">0.15</span>, <span class="at">color =</span> <span class="st">"#2f2f2f"</span>) <span class="sc">+</span></span>
+<span id="cb15-45"><a href="#cb15-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"skyblue"</span>, <span class="st">"orange"</span>)) <span class="sc">+</span></span>
+<span id="cb15-46"><a href="#cb15-46" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb15-47"><a href="#cb15-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Predicted PR by irradiance condition"</span>,</span>
+<span id="cb15-48"><a href="#cb15-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Irradiance condition"</span>,</span>
+<span id="cb15-49"><a href="#cb15-49" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Predicted performance ratio"</span>,</span>
+<span id="cb15-50"><a href="#cb15-50" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"low irradiance days show a clear drop in PR with non-overlapping CIs versus normal days."</span></span>
+<span id="cb15-51"><a href="#cb15-51" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb15-52"><a href="#cb15-52" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_cartesian</span>(<span class="at">ylim =</span> <span class="fu">range</span>(<span class="fu">c</span>(irr_grid<span class="sc">$</span>pred_pr_lo, irr_grid<span class="sc">$</span>pred_pr_hi))) <span class="sc">+</span></span>
+<span id="cb15-53"><a href="#cb15-53" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb15-54"><a href="#cb15-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span>
+<span id="cb15-55"><a href="#cb15-55" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-56"><a href="#cb15-56" aria-hidden="true" tabindex="-1"></a>p_snow</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="BETA_pr_blog_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="BETA_pr_blog_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>p_irr</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="BETA_pr_blog_files/figure-html/unnamed-chunk-16-2.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
 </div>
 </section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>Our Beta regression model partially supported the hypothesis that cumulative snow depth and low-irradiance would reduce photovoltaic performance. Low-irradiance days were significantly associated with a reduction in the log-odds of the Performance Ratio (PR). While the coefficients for cumulative snow depth also suggested a negative impact on PR after accounting for plant age and regional baselines, this effect was not statistically significant. Therefore, the primary driver supporting our hypothesis was the significant negative impact of low-irradiance conditions on photovoltaic performance.</p>
+<section id="discussion" class="level2">
+<h2 class="anchored" data-anchor-id="discussion">Discussion</h2>
+<p>Our hypothesis was that, after accounting for plant age and regional differences, both cumulative snow depth and low-irradiance conditions would lower the performance ratio (PR). The beta regression results partly support this:</p>
+<ul>
+<li><p><strong>Low irradiance:</strong> Strong, highly significant negative effect (logit shift ≈ −1.16). This is the main predictor of reduced PR, aligning with the idea that cloudy/low-light days reuce output.</p></li>
+<li><p><strong>Cumulative snow:</strong> Not statistically significant once irradiance, age, and region are included; in this formulation, snow depth alone does not explain additional PR loss.</p></li>
+</ul>
+<!-- -->
+<ul>
+<li><p><strong>Plant age:</strong> Negative and significant (≈ −0.01 per month), indicating gradual performance decline as systems age.</p></li>
+<li><p><strong>Region effects:</strong> Meaningful baseline differences across regions remain, capturing geographic or operational factors outside the weather covariates.</p></li>
+</ul>
+<p>Therefore, we reject the null for low irradiance. We fail to reject the null for cumulative snow depth. Considering both, we fail to reject the null that both cumulative snow depth and low-irradiance conditions would lower the performance ratio.</p>
+<p><strong>Limitations:</strong></p>
+<ul>
+<li>Beta regression requires 0 &lt; PR &lt; 1; we nudged low boundary values and removed high boundary values.</li>
+</ul>
+<!-- -->
+<ul>
+<li>Snow depth is treated linearly; nonlinear or event-based snow features as included in Jackson &amp; Gunda`s model.</li>
+</ul>
+<p><strong>Future work (time series):</strong></p>
+<p>The next step I would like to take is to explore simple time-series models—e.g., AR(1)/ARIMA with weather events in order to test whether recent snow, low irradiance, or storms predict near-term drops in PR beyond same-day effects. Adding lagged weather terms and comparing regions would show if lead/lag patterns can flag performance risk before it hits, complementing the beta regression’s same-day focus.</p>
+<section id="acknowledgments" class="level3">
+<h3 class="anchored" data-anchor-id="acknowledgments">Acknowledgments</h3>
+<p>This project was part of EDS 222 <em>Statistics for Environmental Data Science</em>, a course in the Master of Environmental Data Science (MEDS) program at the Bren School at UC Santa Barbara.</p>
+<p>I would like to thank Max Czapanskiy for his masterful patience and pedagogical ability, Nathan Grimes for his deeply insightful and constructive feedback and them both for the wonderful instruction of this course and guidance through this final project.</p>
+</section>
 </section>
 
 </main>
