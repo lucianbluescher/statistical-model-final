@@ -14,7 +14,7 @@ Data
 # Session Data files
 .RData
 .RDataTmp
-
+.DS_store
 # User-specific files
 .Ruserdata
 
