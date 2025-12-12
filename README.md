@@ -22,6 +22,7 @@ Weather augmentation (2008–2020): [NOAA Storm Events Database](https://www.ncd
 ## Repository Structure
 
 ```
+statistical-model-final
 ├── beta_blog.qmd             # Beta regression analysis notebook
 ├── oedi_data.xlsx            # OEDI PV data (README, data, data_dictionary)
 ├── extreme_weather.pdf/txt   # Reference paper (Jackson & Gunda, 2021)
